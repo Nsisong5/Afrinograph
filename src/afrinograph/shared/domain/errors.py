@@ -16,3 +16,11 @@ class ConflictError(AfrinographError):
 
 class ValidationError(AfrinographError):
     """Raised when input data or value object validation fails."""
+
+
+class ApplicationError(AfrinographError):
+    """Base exception for application-level errors."""
+
+
+class AdapterError(ApplicationError):
+    """Raised when an external data source adapter encounters an error."""

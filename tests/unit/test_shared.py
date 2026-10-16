@@ -3,7 +3,9 @@ from datetime import UTC, datetime
 import pytest
 
 from afrinograph.shared.domain.errors import (
+    AdapterError,
     AfrinographError,
+    ApplicationError,
     ConflictError,
     DomainError,
     NotFoundError,
@@ -40,3 +42,7 @@ def test_domain_exceptions() -> None:
         raise ConflictError("test conflict")
     with pytest.raises(AfrinographError):
         raise ValidationError("test validation")
+    with pytest.raises(AfrinographError):
+        raise ApplicationError("test application error")
+    with pytest.raises(ApplicationError):
+        raise AdapterError("test adapter error")

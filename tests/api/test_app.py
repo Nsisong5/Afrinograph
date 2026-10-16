@@ -4,7 +4,9 @@ from fastapi import FastAPI
 
 from afrinograph.main import create_app
 from afrinograph.shared.domain.errors import (
+    AdapterError,
     AfrinographError,
+    ApplicationError,
     ConflictError,
     DomainError,
     NotFoundError,
@@ -32,6 +34,14 @@ def app() -> FastAPI:
     @application.get("/raise-domain")
     def raise_domain() -> None:
         raise DomainError("Domain rule violated")
+
+    @application.get("/raise-application")
+    def raise_application() -> None:
+        raise ApplicationError("Application fault")
+
+    @application.get("/raise-adapter")
+    def raise_adapter() -> None:
+        raise AdapterError("Adapter failure")
 
     @application.get("/raise-internal")
     def raise_internal() -> None:
@@ -72,6 +82,14 @@ async def test_exception_handlers(app: FastAPI) -> None:
         assert r4.status_code == 400
         assert r4.json() == {"detail": "Domain rule violated"}
 
-        r5 = await client.get("/raise-internal")
+        r5 = await client.get("/raise-application")
         assert r5.status_code == 500
-        assert r5.json() == {"detail": "Internal server error"}
+        assert r5.json() == {"detail": "Application fault"}
+
+        r6 = await client.get("/raise-adapter")
+        assert r6.status_code == 500
+        assert r6.json() == {"detail": "Adapter failure"}
+
+        r7 = await client.get("/raise-internal")
+        assert r7.status_code == 500
+        assert r7.json() == {"detail": "Internal server error"}

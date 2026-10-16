@@ -5,7 +5,7 @@ import pytest
 
 
 class DomainImportVisitor(ast.NodeVisitor):
-    """AST visitor to check imports inside domain modules."""
+    """AST visitor to check imports inside domain and application modules."""
 
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
@@ -24,7 +24,7 @@ class DomainImportVisitor(ast.NodeVisitor):
             for forbidden in self.forbidden_imports:
                 if alias.name.startswith(forbidden):
                     self.violations.append(
-                        f"{self.filepath}:{node.lineno} - Forbidden import of '{alias.name}' in domain layer."
+                        f"{self.filepath}:{node.lineno} - Forbidden import of '{alias.name}' in inner layer."
                     )
         self.generic_visit(node)
 
@@ -33,35 +33,36 @@ class DomainImportVisitor(ast.NodeVisitor):
             for forbidden in self.forbidden_imports:
                 if node.module.startswith(forbidden):
                     self.violations.append(
-                        f"{self.filepath}:{node.lineno} - Forbidden import from '{node.module}' in domain layer."
+                        f"{self.filepath}:{node.lineno} - Forbidden import from '{node.module}' in inner layer."
                     )
             # Also check if importing infrastructure
             if "infrastructure" in node.module or node.module.startswith("afrinograph.shared.infrastructure"):
                 self.violations.append(
-                    f"{self.filepath}:{node.lineno} - Domain layer cannot import infrastructure module '{node.module}'."
+                    f"{self.filepath}:{node.lineno} - Inner layer cannot import infrastructure module '{node.module}'."
                 )
         self.generic_visit(node)
 
 
 @pytest.mark.architecture
-def test_domain_layer_isolation() -> None:
-    """Enforce that domain layers across all modules do not import forbidden frameworks or infrastructure."""
+def test_domain_and_application_layer_isolation() -> None:
+    """Enforce that domain and application layers across all modules do not import forbidden frameworks or infrastructure."""
     src_dir = Path("src/afrinograph")
     if not src_dir.exists():
         pytest.skip("Source directory does not exist yet.")
 
     violations: list[str] = []
 
-    # Find all domain directories
-    for domain_path in src_dir.glob("**/domain"):
-        if domain_path.is_dir():
-            for py_file in domain_path.glob("**/*.py"):
+    # Find all domain and application directories
+    layer_paths = list(src_dir.glob("**/domain")) + list(src_dir.glob("**/application"))
+    for layer_path in layer_paths:
+        if layer_path.is_dir():
+            for py_file in layer_path.glob("**/*.py"):
                 tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
                 visitor = DomainImportVisitor(str(py_file))
                 visitor.visit(tree)
                 violations.extend(visitor.violations)
 
-    assert not violations, "Architecture boundary violations found in domain layer:\n" + "\n".join(violations)
+    assert not violations, "Architecture boundary violations found in domain or application layer:\n" + "\n".join(violations)
 
 
 @pytest.mark.architecture

@@ -36,7 +36,7 @@ minversion = "8.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
 asyncio_mode = "auto"
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "unit: Unit tests (no DB, no network)",
     "contract: Contract compliance tests",

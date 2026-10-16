@@ -3,7 +3,9 @@ from fastapi.responses import JSONResponse
 
 from afrinograph.logging import setup_logging
 from afrinograph.shared.domain.errors import (
+    AdapterError,
     AfrinographError,
+    ApplicationError,
     ConflictError,
     DomainError,
     NotFoundError,
@@ -43,6 +45,16 @@ def create_app() -> FastAPI:
     ) -> JSONResponse:
         return JSONResponse(
             status_code=400,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(AdapterError)
+    @app.exception_handler(ApplicationError)
+    async def application_error_handler(
+        request: Request, exc: ApplicationError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=500,
             content={"detail": str(exc)},
         )
 
